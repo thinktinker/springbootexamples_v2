@@ -3,6 +3,7 @@ package com.martin.jpa.model;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
+import jakarta.validation.constraints.NotBlank;
 import org.hibernate.annotations.OnDelete;
 import org.hibernate.annotations.OnDeleteAction;
 
@@ -20,6 +21,7 @@ public class Feedback {
     Customer customer;
 
     @Column(nullable = false)
+    @NotBlank(message = "Feedback description cannot be blank.")
     String description;
 
     // * constructor

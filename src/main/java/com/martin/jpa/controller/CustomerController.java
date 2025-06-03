@@ -1,5 +1,6 @@
 package com.martin.jpa.controller;
 
+import com.martin.jpa.exception.ResourceNotFoundException;
 import com.martin.jpa.model.Customer;
 import com.martin.jpa.repository.CustomerRepository;
 import com.martin.jpa.service.CustomerService;
@@ -10,6 +11,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
 
@@ -20,42 +22,32 @@ public class CustomerController {
     CustomerService customerService; // alternatively, use constructor to instantiate
 
     @PostMapping("/add")
-    public ResponseEntity<Object> addCustomer(@Valid @RequestBody Customer customer) throws Exception{
-        try{
+    public ResponseEntity<Object> addCustomer(@Valid @RequestBody Customer customer){
             // try to save the customer to the database
             customerService.save(customer);
             return new ResponseEntity<>(customer, HttpStatus.CREATED);
-        }catch (Exception e){
-            // present the error back to the api call
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
     }
 
     @GetMapping("/all")
-    public ResponseEntity<Object> allCustomers() throws Exception{
-        try {
+    public ResponseEntity<Object> allCustomers() throws ResourceNotFoundException {
+
             // retrieve all customers
             List<Customer> customers = customerService.findAll();
 
-            // if no customer is returned
+            // if no customer is returned, throw custom exception ResourceNotFoundException
             if(customers.isEmpty())
-                throw new Exception("No customer found.");
+                throw new ResourceNotFoundException("No customer found.");
 
             return new ResponseEntity<>(customers, HttpStatus.OK); // 200
-        }catch (Exception e){
-            // present the error back to the api call
-            if(e.getMessage().equals("No customer found."))
-                return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND); // 404
 
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST); // 400
-        }
     }
 
     @PutMapping("/update/{id}") // Path variable
-    public ResponseEntity<Object> updateCustomer(@PathVariable("id") Integer id, @RequestBody Customer customer) throws Exception{
-        try{
-            // find the customer, else throw an exception
-            Customer currentCustomer = customerService.findById(id).orElseThrow(()->new Exception("Customer not found."));
+    public ResponseEntity<Object> updateCustomer(@PathVariable("id") Integer id, @Valid @RequestBody Customer customer) throws ResourceNotFoundException{
+
+            // find the customer, else throw custom exception ResourceNotFoundException
+            Customer currentCustomer = customerService
+                    .findById(id).orElseThrow(()->new ResourceNotFoundException("Customer not found."));
 
             // update the customer
             currentCustomer.setFirstName(customer.getFirstName());
@@ -66,80 +58,60 @@ public class CustomerController {
             Customer result = customerService.update(currentCustomer);
             return new ResponseEntity<>(result, HttpStatus.OK); // or use NO_CONTENT
 
-        }catch (Exception e){
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-        }
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Object> getCustomerById(@PathVariable("id") Integer id) throws Exception {
+    public ResponseEntity<Object> getCustomerById(@PathVariable("id") Integer id) throws ResourceNotFoundException {
 
-        try{
-            // get customer by id and return the response
-            Customer customer = customerService.findById(id).orElseThrow(()->new Exception("Customer not found."));
+            // get customer by id and return the response, if no returned customer, throw ResourceNotFoundException
+            Customer customer = customerService.findById(id).orElseThrow(()->new ResourceNotFoundException("Customer not found."));
             return new ResponseEntity<>(customer, HttpStatus.OK); // 200
-        }catch(Exception e){
-            return  new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-        }
-
     }
 
     @DeleteMapping("/{id}")
-    public ResponseEntity<Object> deleteCustomerById(@PathVariable("id") Integer id) throws Exception{
+    public ResponseEntity<Object> deleteCustomerById(@PathVariable("id") Integer id) throws ResourceNotFoundException{
 
-        try {
-            // delete the customer only if the customer is found
-            Customer customer = customerService.findById(id).orElseThrow(()->new Exception("Unable to perform the task."));
-
+            // delete the customer only if the customer is found, if no returned customer, throw ResourceNotFoundException
+            Customer customer = customerService.findById(id).orElseThrow(()->new ResourceNotFoundException("Unable to perform the task."));
             customerService.delete(customer.getId());
-
             return new ResponseEntity<>(customer, HttpStatus.OK);
-        }catch (Exception e){
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.BAD_REQUEST);
-        }
     }
 
     @GetMapping("")
     public ResponseEntity<Object> getCustomerByEmailOrLastName(
-            @RequestParam("email") String email,                            // email is a url param
-            @RequestParam("lastName") String lastName) throws Exception{    // lastName is a url param
+            @RequestParam("email") String email,                                            // email is a url param
+            @RequestParam("lastName") String lastName) throws ResourceNotFoundException{    // lastName is a url param
 
-        try {
-
-            if(!email.isBlank() && !lastName.isBlank()) {                   // email and lastName params found
+            if(!email.isBlank() && !lastName.isBlank()) {                                   // email and lastName params found
 
                 List<Customer> customers = customerService.
                         findByEmailContainingOrLastNameContaining(email, lastName);
 
                 if (customers.isEmpty())
-                    throw new Exception("Customer not found.");
+                    throw new ResourceNotFoundException("Customer not found.");
 
                 return new ResponseEntity<>(customers, HttpStatus.OK);
 
-            }else if(!email.isBlank() && lastName.isBlank()){               // only email param found
+            }else if(!email.isBlank() && lastName.isBlank()){                               // only email param found
 
                 List<Customer> customers = customerService.findByEmailContaining(email);
 
                 if (customers.isEmpty())
-                    throw new Exception("Customer not found.");
+                    throw new ResourceNotFoundException("Customer not found.");
 
                 return new ResponseEntity<>(customers, HttpStatus.OK);
 
-            }else if(email.isBlank() && !lastName.isBlank()){               // only lastName param found
+            }else if(email.isBlank() && !lastName.isBlank()){                               // only lastName param found
 
                 List<Customer> customers = customerService.findByLastNameContaining(lastName);
 
                 if (customers.isEmpty())
-                    throw new Exception("Customer not found.");
+                    throw new ResourceNotFoundException("Customer not found.");
 
                 return new ResponseEntity<>(customers, HttpStatus.OK);
-            }else{                                                          // no params found, return everything
+            }else{                                                                          // no params found, return everything
                 return new ResponseEntity<>(allCustomers(), HttpStatus.OK);
             }
-
-        }catch(Exception e){
-            return new ResponseEntity<>(e.getMessage(), HttpStatus.NOT_FOUND);
-        }
     }
 
 }
