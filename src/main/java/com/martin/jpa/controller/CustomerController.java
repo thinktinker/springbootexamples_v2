@@ -3,6 +3,7 @@ package com.martin.jpa.controller;
 import com.martin.jpa.model.Customer;
 import com.martin.jpa.repository.CustomerRepository;
 import com.martin.jpa.service.CustomerService;
+import jakarta.validation.Valid;
 import org.hibernate.type.descriptor.java.ObjectJavaType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -19,7 +20,7 @@ public class CustomerController {
     CustomerService customerService; // alternatively, use constructor to instantiate
 
     @PostMapping("/add")
-    public ResponseEntity<Object> addCustomer(@RequestBody Customer customer) throws Exception{
+    public ResponseEntity<Object> addCustomer(@Valid @RequestBody Customer customer) throws Exception{
         try{
             // try to save the customer to the database
             customerService.save(customer);

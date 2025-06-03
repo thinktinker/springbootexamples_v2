@@ -26,11 +26,12 @@ public class Customer {
     @Column(nullable = false, unique = true)                    // prevents null values & email duplicates
     @Email(regexp = "[a-z0-9._%+-]+@[a-z0-9.-]+\\.[a-z]{2,3}",  // regular expression for email
             flags = Pattern.Flag.CASE_INSENSITIVE,
-            message = "Email is invalid"
+            message = "Email is invalid."
     )
     String email;
 
     @Column
+    @Pattern(regexp = "^\\d{8}$", message = "Phone number must be 8 digits only.")
     String phone;
 
     public Customer() {                                                                 // empty constructor
