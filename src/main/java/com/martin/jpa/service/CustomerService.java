@@ -3,6 +3,7 @@ package com.martin.jpa.service;
 import com.martin.jpa.model.Customer;
 import com.martin.jpa.repository.CustomerRepository;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -14,8 +15,12 @@ public class CustomerService implements CustomerServiceInterface{
     @Autowired
     CustomerRepository customerRepository;
 
+    @Autowired
+    PasswordEncoder passwordEncoder;
+
     @Override
     public Customer save(Customer customer) {
+        customer.setPassword(passwordEncoder.encode(customer.getPassword()));
         return customerRepository.save(customer);
     }
 
@@ -26,6 +31,7 @@ public class CustomerService implements CustomerServiceInterface{
 
     @Override
     public Customer update(Customer customer) {
+        customer.setPassword(passwordEncoder.encode(customer.getPassword()));
         return customerRepository.save(customer);
     }
 
@@ -37,6 +43,11 @@ public class CustomerService implements CustomerServiceInterface{
     @Override
     public void delete(Integer id) {
         customerRepository.deleteById(id);
+    }
+
+    @Override
+    public Optional<Customer> findByEmail(String email) {
+        return customerRepository.findByEmail(email);
     }
 
     @Override

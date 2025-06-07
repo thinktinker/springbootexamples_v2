@@ -1,7 +1,9 @@
 package com.martin.jpa.exception;
 
+import com.martin.jpa.utils.Utils;
 import org.springframework.core.Ordered;
 import org.springframework.core.annotation.Order;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.HttpStatusCode;
@@ -14,6 +16,8 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.context.request.WebRequest;
 import org.springframework.web.servlet.mvc.method.annotation.ResponseEntityExceptionHandler;
 
+import javax.naming.AuthenticationException;
+import java.sql.SQLIntegrityConstraintViolationException;
 import java.util.Map;
 import java.util.HashMap;
 
@@ -41,7 +45,7 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
     //2. When user request for a resource (e.g. Customer or Feedback not found),
     // ResourceNotFoundException will be thrown, managed by httpEntityNotFound
     @ExceptionHandler(ResourceNotFoundException.class)
-    protected ResponseEntity<Object> httpEntityNotFound(ResourceNotFoundException ex){
+    protected ResponseEntity<Object> handleResourceNotFoundException(ResourceNotFoundException ex){
 
         // store the responses as a HashMap, to return as part of the reponse
         Map<String, String> errorResponse = new HashMap<>();
@@ -68,5 +72,60 @@ public class GlobalExceptionHandler extends ResponseEntityExceptionHandler {
         errorResponse.put("error", errors);
 
         return new ResponseEntity<>(errors, HttpStatus.BAD_REQUEST);
+    }
+
+    // 4. When the user uses a blank password, invoke handlePasswordBlankException
+    @ExceptionHandler(PasswordBlankException.class)
+    protected ResponseEntity<Object> handlePasswordBlankException(PasswordBlankException ex){
+
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", ex.getMessage());
+
+        return new ResponseEntity<>(errorResponse, HttpStatus.BAD_REQUEST);
+    }
+
+    // 5. When user access is not authorised (authentication failed in AuthService)
+    // invoke handleAccessDeniedException
+    @ExceptionHandler(AuthenticationException.class)
+    protected ResponseEntity<Object> handleAccessDeniedException(AuthenticationException ex){
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", ex.getMessage());
+        return new ResponseEntity<>(errorResponse, HttpStatus.UNAUTHORIZED);
+    }
+
+    // 6. handle/trap errors produced by key constraints (e.g. adding an email that already exists)
+    // @Table(name="customer" uniqueConstraints = {@UniqueConstraint(name ="email", columnNames = "email")})
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<Object> handleDataIntegrityViolationException(DataIntegrityViolationException ex) {
+
+        Map<String, String> errorResponse = new HashMap<>();
+
+        String cause = ex.getMostSpecificCause().getMessage();
+
+        String constraintName = ((org.hibernate.exception.ConstraintViolationException)ex.getCause()).getConstraintName();
+        constraintName = Utils.substringAtLastDelimiter(constraintName, ".");
+        constraintName = Utils.capitalise(constraintName);
+
+        if(ex.getCause().getCause() instanceof SQLIntegrityConstraintViolationException){
+            if(cause.toLowerCase().contains("duplicate"))
+                errorResponse.put("error", constraintName + " is already used.");
+            return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+        }
+
+        errorResponse.put("error", "Unknown Violation: " + cause);
+
+        return ResponseEntity.status(HttpStatus.CONFLICT).body(errorResponse);
+    }
+
+
+    // 7. For all exceptions that take place and not managed by the above exceptions
+    // invoke handleUnspecifiedExceptions
+    @ExceptionHandler(Exception.class)
+    protected ResponseEntity<Object> handleUnspecifiedException(Exception ex){
+
+        UnspecifiedException unspecifiedException = new UnspecifiedException();
+        Map<String, String> errorResponse = new HashMap<>();
+        errorResponse.put("error", ex.getMessage());
+        return new ResponseEntity<>(errorResponse, HttpStatus.INTERNAL_SERVER_ERROR);
     }
 }

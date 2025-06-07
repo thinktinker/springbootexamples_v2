@@ -3,9 +3,11 @@ package com.martin.jpa.repository;
 import com.martin.jpa.model.Customer;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.repository.CrudRepository;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface CustomerRepository extends JpaRepository<Customer, Integer> {
@@ -22,4 +24,5 @@ public interface CustomerRepository extends JpaRepository<Customer, Integer> {
     List<Customer> findByEmailContainingOrLastNameContaining(String email, String lastName);
     List<Customer> findByEmailContaining(String email);
     List<Customer> findByLastNameContaining(String lastName);
+    Optional<Customer> findByEmail(String username);
 }

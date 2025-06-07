@@ -1,13 +1,17 @@
 package com.martin.jpa.model;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.Pattern;
-import jakarta.validation.constraints.Size;
+import jakarta.validation.constraints.*;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
+
+import java.util.Collection;
+import java.util.List;
 
 @Entity
-public class Customer {
+@Table(name="customer", uniqueConstraints = {@UniqueConstraint(name ="email", columnNames = "email")})
+public class Customer implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)             // primary key, auto-incremented
@@ -30,11 +34,22 @@ public class Customer {
     )
     String email;
 
+    @Column(nullable = false)
+    @NotBlank(message = "Password cannot be blank.")
+    // @Pattern(regexp = "^(?=.*[0-9])(?=.*[a-z])(?=.*[A-Z])(?=.*[@#$%^&+=])(?=\\S+$).{8,}$", message = "Password is not strong.")
+    private String password;
+
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    @NotNull(message = "Role annot be blank.")
+    private EnumRole role;
+
     @Column
     @Pattern(regexp = "^\\d{8}$", message = "Phone number must be 8 digits only.")
     String phone;
 
     public Customer() {                                                                 // empty constructor
+        role = null;
     }
 
     public Customer(String firstName, String lastName, String email, String phone) {    // parameterized constructor
@@ -42,6 +57,7 @@ public class Customer {
         this.lastName = lastName;
         this.email = email;
         this.phone = phone;
+        this.role = null;
     }
 
     // getters
@@ -65,6 +81,10 @@ public class Customer {
         return phone;
     }
 
+    public EnumRole getRole() {
+        return role;
+    }
+
     // setters (except id)
     public void setFirstName(String firstName) {
         this.firstName = firstName;
@@ -80,5 +100,48 @@ public class Customer {
 
     public void setPhone(String phone) {
         this.phone = phone;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public void setRole(EnumRole role) {
+        this.role = role;
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority(role.name()));
+    }
+
+    @Override
+    public String getPassword() {
+        return password;
+    }
+
+    @Override
+    public String getUsername() {
+        return email;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return true;
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return true;
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return true;
     }
 }

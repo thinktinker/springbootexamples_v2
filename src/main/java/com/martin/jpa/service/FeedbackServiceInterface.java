@@ -1,5 +1,6 @@
 package com.martin.jpa.service;
 
+import com.martin.jpa.model.Customer;
 import com.martin.jpa.model.Feedback;
 
 import java.util.List;
@@ -11,7 +12,7 @@ public interface FeedbackServiceInterface {
     public Feedback saveFeedback(Feedback feedback);
     public List<Feedback> findAll();
     public Optional<Feedback> findById(Integer id);
-    public Feedback updateFeedback(Feedback feedback);
+    public Feedback updateFeedback(Integer id, Feedback feedback);
     public void deleteById(Integer id);
     public long count();
 

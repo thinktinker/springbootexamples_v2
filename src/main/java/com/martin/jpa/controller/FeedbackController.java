@@ -3,18 +3,21 @@ package com.martin.jpa.controller;
 import com.martin.jpa.exception.ResourceNotFoundException;
 import com.martin.jpa.model.Customer;
 import com.martin.jpa.model.Feedback;
+import com.martin.jpa.repository.FeedbackRepository;
 import com.martin.jpa.service.CustomerService;
 import com.martin.jpa.service.FeedbackService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
 @RestController
-@RequestMapping("/feedback")
+@RequestMapping("/user/feedback")
 public class FeedbackController {
 
     @Autowired
@@ -23,17 +26,9 @@ public class FeedbackController {
     @Autowired
     CustomerService customerService;
 
-    @PostMapping("/add/{customer_id}")      // customer_id rep. which customer saved the feedback
-    public ResponseEntity<Object> saveFeedback(
-            @PathVariable("customer_id") Integer customer_id,
-            @Valid @RequestBody Feedback feedback) throws ResourceNotFoundException {
-
-            Feedback checkFeedback = customerService.findById(customer_id).map((customer) -> {
-                Feedback _feedback = new Feedback(customer, feedback.getDescription());
-                return feedbackService.saveFeedback(_feedback);
-            }).orElseThrow(() -> new ResourceNotFoundException("Customer not found."));
-
-            return new ResponseEntity<>(checkFeedback, HttpStatus.OK);
+    @PostMapping("/add")
+    public ResponseEntity<Object> saveFeedback(@Valid @RequestBody Feedback feedback) throws ResourceNotFoundException {
+            return new ResponseEntity<>(feedbackService.saveFeedback(feedback), HttpStatus.OK);
     }
 
     @GetMapping("/")
@@ -48,26 +43,24 @@ public class FeedbackController {
     }
 
     @PutMapping("/{feedback_id}")
-    public ResponseEntity<Object> updateFeedback(
-            @PathVariable("feedback_id")Integer feedback_id,
-            @Valid @RequestBody Feedback feedback
-    ) throws ResourceNotFoundException{
+    public ResponseEntity<Object> updateFeedback(@PathVariable("feedback_id")Integer feedback_id, @Valid @RequestBody Feedback feedback) throws ResourceNotFoundException{
 
-            Feedback checkFeedback = feedbackService.findById(feedback_id).map((_feedback)->{
-                _feedback.setDescription(feedback.getDescription());
-                return feedbackService.saveFeedback(_feedback);
-            }).orElseThrow(()->new ResourceNotFoundException("There was an error."));
+        // find the feedback
+        Feedback checkFeedback = feedbackService.findById(feedback_id).map((currentFeedback)->{
+            // if feedback exists, invoke updateFeedback()
+            return feedbackService.updateFeedback(currentFeedback.getId(), feedback);
+        }).orElseThrow(()->new ResourceNotFoundException("Feedback not found."));
 
-            return new ResponseEntity<>(checkFeedback, HttpStatus.OK);
+        return new ResponseEntity<>(checkFeedback, HttpStatus.OK);
     }
 
     @DeleteMapping("/{feedback_id}")
     public ResponseEntity<Object> deleteFeedback(@PathVariable("feedback_id") Integer feedback_id) throws ResourceNotFoundException{
 
-            Feedback checkFeedback = feedbackService.findById(feedback_id).map((_feedback)->{
-                feedbackService.deleteById(_feedback.getId());
-                return _feedback;
-            }).orElseThrow(()->new ResourceNotFoundException("There was an error."));
+            Feedback checkFeedback = feedbackService.findById(feedback_id).map((currentFeedback)->{
+                feedbackService.deleteById(currentFeedback.getId());
+                return currentFeedback;
+            }).orElseThrow(()->new ResourceNotFoundException("Feedback not found."));
 
             return new ResponseEntity<>(checkFeedback, HttpStatus.OK); // 200
     }
@@ -77,32 +70,18 @@ public class FeedbackController {
             return new ResponseEntity<>(feedbackService.count(), HttpStatus.OK);
     }
 
-    // Challenge statement
-    // Delete the feedback that belongs to a customer
+    @DeleteMapping("/customer")
+    public ResponseEntity<Object> deleteFeedbackByCustomer() throws ResourceNotFoundException{
 
-    // 1. Find the customer
-    // 2. Delete the customer's feedback
-
-    @DeleteMapping("/customer/{customer_id}")
-    public ResponseEntity<Object> deleteFeedbackByCustomer(@PathVariable("customer_id") Integer customer_id) throws ResourceNotFoundException{
-
-            Customer customer = customerService.findById(customer_id).map((_customer)->{
-                feedbackService.deleteByCustomerId(_customer.getId());
-                return _customer;
-            }).orElseThrow(()-> new ResourceNotFoundException("There was an error."));
+            Customer customer = feedbackService.deleteByCustomer();
 
             return new ResponseEntity<>(String.format("Deleted all feedback from customer id: %d", customer.getId()), HttpStatus.OK);
 
     }
 
-    @GetMapping("/customer/{customer_id}")
-    public ResponseEntity<Object> getFeedbackByCustomerId(@PathVariable("customer_id") Integer customer_id) throws ResourceNotFoundException{
-
-            List<Feedback> checkFeedback = customerService.findById(customer_id).map((_customer)->{
-                return feedbackService.findByCustomer(_customer);
-            }).orElseThrow(()-> new ResourceNotFoundException("There was an error."));
-
-            return new ResponseEntity<>(checkFeedback, HttpStatus.OK);
+    @GetMapping("/customer")
+    public ResponseEntity<Object> getFeedbackByCustomerId() throws ResourceNotFoundException{
+            return new ResponseEntity<>(feedbackService.findByCustomer(), HttpStatus.OK);
     }
 }
 

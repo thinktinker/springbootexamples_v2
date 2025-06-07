@@ -2,30 +2,30 @@ package com.martin.jpa.controller;
 
 import com.martin.jpa.exception.ResourceNotFoundException;
 import com.martin.jpa.model.Customer;
-import com.martin.jpa.repository.CustomerRepository;
 import com.martin.jpa.service.CustomerService;
 import jakarta.validation.Valid;
-import org.hibernate.type.descriptor.java.ObjectJavaType;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpStatusCode;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.servlet.resource.NoResourceFoundException;
 
 import java.util.List;
 
 @RestController
-public class CustomerController {
+@RequestMapping("/admin")
+@CrossOrigin("*")
+public class AdminCustomerController {
 
     @Autowired
     CustomerService customerService; // alternatively, use constructor to instantiate
 
     @PostMapping("/add")
     public ResponseEntity<Object> addCustomer(@Valid @RequestBody Customer customer){
-            // try to save the customer to the database
-            customerService.save(customer);
-            return new ResponseEntity<>(customer, HttpStatus.CREATED);
+
+        // save the customer to the database
+        // the password for the customer need to be encoded first
+        return new ResponseEntity<>(customerService.save(customer), HttpStatus.CREATED);
     }
 
     @GetMapping("/all")
@@ -47,16 +47,19 @@ public class CustomerController {
 
             // find the customer, else throw custom exception ResourceNotFoundException
             Customer currentCustomer = customerService
-                    .findById(id).orElseThrow(()->new ResourceNotFoundException("Customer not found."));
+                    .findById(id)
+                    .map((_customer)->{
+                        // update the customer
+                        _customer.setFirstName(customer.getFirstName());
+                        _customer.setLastName(customer.getLastName());
+                        _customer.setEmail(customer.getEmail());
+                        _customer.setPhone(customer.getPhone());
+                        _customer.setRole(customer.getRole());
+                        _customer.setPassword(customer.getPassword());
+                        return customerService.update(_customer);
+                    }).orElseThrow(()->new ResourceNotFoundException("Customer not found."));
 
-            // update the customer
-            currentCustomer.setFirstName(customer.getFirstName());
-            currentCustomer.setLastName(customer.getLastName());
-            currentCustomer.setEmail(customer.getEmail());
-            currentCustomer.setPhone(customer.getPhone());
-
-            Customer result = customerService.update(currentCustomer);
-            return new ResponseEntity<>(result, HttpStatus.OK); // or use NO_CONTENT
+            return new ResponseEntity<>(currentCustomer, HttpStatus.OK); // or use NO_CONTENT
 
     }
 

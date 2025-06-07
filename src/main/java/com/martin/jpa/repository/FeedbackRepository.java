@@ -10,6 +10,7 @@ import org.springframework.stereotype.Repository;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public interface FeedbackRepository extends JpaRepository<Feedback, Integer> {
@@ -26,4 +27,7 @@ public interface FeedbackRepository extends JpaRepository<Feedback, Integer> {
 
     // derived query
     List<Feedback> findByCustomer(Customer customer);
+
+    // derived query
+    Optional<Feedback> findByIdAndCustomer(Integer id, Customer customer);
 }

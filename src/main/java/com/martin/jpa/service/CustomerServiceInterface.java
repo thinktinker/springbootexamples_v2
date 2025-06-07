@@ -13,6 +13,7 @@ public interface CustomerServiceInterface {
     public Customer update(Customer customer);
     public Optional<Customer> findById(Integer id);
     public void delete(Integer id);
+    public Optional<Customer> findByEmail(String email);
 
     // TODO
     public  List<Customer> findByEmailContainingOrLastNameContaining(

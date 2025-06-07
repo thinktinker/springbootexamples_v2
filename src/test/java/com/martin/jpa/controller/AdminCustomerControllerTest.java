@@ -29,7 +29,7 @@ import static org.hamcrest.CoreMatchers.is;
 
 @SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 @AutoConfigureMockMvc(addFilters = false) // disable security filters while testing
-class CustomerControllerTest {
+class AdminCustomerControllerTest {
 
     @Autowired
     private MockMvc mockMvc;
@@ -68,7 +68,7 @@ class CustomerControllerTest {
     }
 
     @Test
-    @DisplayName("**JUNIT test: add a customer from CustomerController**")
+    @DisplayName("**JUNIT test: add a customer from AdminCustomerController**")
     void addCustomer() throws Exception {
         // arrange - prepare
         String requestBody = objectMapper.writeValueAsString(customer1);
@@ -88,7 +88,7 @@ class CustomerControllerTest {
     }
 
     @Test
-    @DisplayName("**JUNIT test: get all customers from CustomerController**")
+    @DisplayName("**JUNIT test: get all customers from AdminCustomerController**")
     void allCustomers() throws Exception {
         // arrange - prepare
         customerRepository.saveAll(customerList);
@@ -103,7 +103,7 @@ class CustomerControllerTest {
     }
 
     @Test
-    @DisplayName("**JUNIT test: update customer from CustomerController**")
+    @DisplayName("**JUNIT test: update customer from AdminCustomerController**")
     void updateCustomer() throws Exception {
         // arrange - prepare
         customerService.save(customer1);
@@ -132,7 +132,7 @@ class CustomerControllerTest {
     }
 
     @Test
-    @DisplayName("**JUNIT test: get customer by ID from CustomerController**")
+    @DisplayName("**JUNIT test: get customer by ID from AdminCustomerController**")
     void getCustomerById() throws Exception {
         // arrange - prepare
         customerService.save(customer1);
@@ -150,7 +150,7 @@ class CustomerControllerTest {
     }
 
     @Test
-    @DisplayName("**JUNIT test: delete customer by ID from CustomerController**")
+    @DisplayName("**JUNIT test: delete customer by ID from AdminCustomerController**")
     void deleteCustomerById() throws Exception {
         // arrange - prepare
         customerService.save(customer2);
@@ -168,7 +168,7 @@ class CustomerControllerTest {
     }
 
     @Test
-    @DisplayName("**JUNIT test: search for customer by email or lastname from CustomerController**")
+    @DisplayName("**JUNIT test: search for customer by email or lastname from AdminCustomerController**")
     void getCustomerByEmailOrLastName() throws Exception {
         // arrange - prepare
         customerRepository.saveAll(customerList);
